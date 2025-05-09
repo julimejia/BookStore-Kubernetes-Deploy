@@ -1,0 +1,7 @@
+fastapi                 # Framework web ASGI para crear APIs
+uvicorn                 # Servidor ASGI para correr FastAPI
+sqlalchemy              # ORM para interactuar con la base de datos
+psycopg2-binary         # Adaptador PostgreSQL para SQLAlchemy
+pydantic                # Validación de datos con Pydantic (usado por FastAPI)
+passlib[bcrypt]         # Biblioteca para hashing de contraseñas (usado en el registro/login)
+python-jose             # Para generar y verificar JWT (usado para autenticación)
