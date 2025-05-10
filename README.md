@@ -19,10 +19,24 @@ utilizando Máquinas Virtuales (VM) con autoescalamiento, base de datos aparte A
 es implementada con VM con Alta Disponibilidad, y Archivos compartidos vía NFS (como un servicio
 o una VM con NFS con Alta Disponibilidad).
 
-1 Auto Scaling group
+1 AMI app monolitica
+
+   1 Creacion
+     - Cree una instancia EC2 t2 micro 8 de almacenamiento, con al vpc por default o la que vaya a contener todo el proyecto,  y con el grupo de reglas default o el que vaya a usar todo el proyecto
+     
+   2 Clonacion y funcionamiento
+     - clone el repositorio de github dentro de la consola de la instancia
+     - Actualice la instancia, upgradee la instancia
+     - instale python en la instancia
+     - entre en la carpeta del repositorio
+     - cree un entorno virtual de python
+     - Ingrese al mismo
+     - Instale dependencias
+     - corra el proyecto
+     
+2 Auto Scaling group
   
   1 Creacion de la plantilla del auto scaling group
-  
    - Vaya a EC2
    - Click en Auto scaling en el side bar de la izquierda
    - Grupos de AutoScaling
@@ -36,8 +50,29 @@ o una VM con NFS con Alta Disponibilidad).
     - Use almenos 2 zonas de disponibilidad 
     - Todo lo demas dejelo por default
     - Cree el grupo
+  3 Lanzamiento
+    - Dentro de la consola EC2 vaya a auto scaling group
+    - vaya a la parte de lanzar uno nuevo.
+    - seleccione la plantilla ya creada
+  
 2 Load balancer 
-
+   1 Creacion del load balancer 
+    - Dentro de la consola EC2 vaya a load balancer
+    - Cree un grupo (Las instancias que va a balancear)
+    - Vaya al apartado de creacion
+    - Seleccione HTTP/HTTPS
+    - Seleccione las mismas zonas de disponibilidad del autoscaling group
+    - todo lo demas en default
+    - cree la instancia
+    
+  2 Añadir la instancia al AutoScaling group
+    - Vaya al autoScaling group que ya creo 
+    - Vaya al apartado de editar
+    - vaya al apartado balanceador de carga
+    - Seleccione grupos destino
+    - Seleccione el grupo que ha creado
+3 Base de datos
+  1 Esta ves no en EC2 vaya a RDS > Databases > Create Database
   
 
 
