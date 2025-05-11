@@ -72,7 +72,7 @@ o una VM con NFS con Alta Disponibilidad).
     - Seleccione grupos destino
     - Seleccione el grupo que ha creado
 3 Base de datos
-  1 Esta ves no en EC2 vaya a RDS > Databases > Create Database
+  1 Cree un EC2 para almacenar la base de datos
   
 
 
