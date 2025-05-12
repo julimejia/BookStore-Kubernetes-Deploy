@@ -18,13 +18,6 @@ app.config['SQLALCHEMY_BINDS'] = {
     'slave': slave_db_uri
 }
 
-# Add this before table creation
-try:
-    db.engine.connect()
-    print("Database connection successful")
-except Exception as e:
-    print(f"Connection failed: {e}")
-    raise
 
 # Configuración de la base de datos con SQLAlchemy
 db.init_app(app)
