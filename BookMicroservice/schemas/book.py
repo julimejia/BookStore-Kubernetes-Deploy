@@ -16,3 +16,6 @@ class BookOut(BookBase):
 
     class Config:
         orm_mode = True
+
+class BookUpdateStock(BaseModel):
+    new_stock: int    

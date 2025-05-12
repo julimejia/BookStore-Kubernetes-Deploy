@@ -32,3 +32,10 @@ class BookRepository:
     def delete(self, book: Book):
         self.db.delete(book)
         self.db.commit()
+    
+    def update_good(self, book: Book, update_data: dict):  # Cambié el tipo de update_data a dict
+        for key, value in update_data.items():
+            setattr(book, key, value)
+        self.db.commit()
+        self.db.refresh(book)
+        return book

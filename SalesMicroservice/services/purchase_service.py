@@ -5,21 +5,19 @@ from services.book_client import get_book, reduce_stock
 from schemas.purchase import PurchaseCreate
 from db import get_db
 
-async def create_purchase_service(purchase: PurchaseCreate, user_id: int, db: Session = Depends(get_db)):
-    # Obtener información del libro
+async def create_purchase_service(token: str, purchase: PurchaseCreate, user_id: int, db: Session = Depends(get_db)):
+
     book = await get_book(purchase.book_id)
-    
-    # Verificar que haya suficiente stock
+    price = book["price"]
+
     if book["stock"] < purchase.quantity:
         raise HTTPException(status_code=400, detail="No hay suficiente stock disponible.")
-    
-    # Reducir el stock del libro
-    await reduce_stock(purchase.book_id, purchase.quantity)
-    
-    # Calcular el total
-    total_price = purchase.quantity * purchase.price
+  
+    new_stock = book["stock"] - purchase.quantity
+    await reduce_stock(purchase.book_id, new_stock, token)
 
-    # Crear la compra
+    total_price = purchase.quantity * price
+
     new_purchase = Purchase(
         user_id=user_id,
         book_id=purchase.book_id,
@@ -28,10 +26,8 @@ async def create_purchase_service(purchase: PurchaseCreate, user_id: int, db: Se
         status="Pending Payment"
     )
 
-    # Guardar la compra en la base de datos
     db.add(new_purchase)
     db.commit()
     db.refresh(new_purchase)
 
-    # Retornar la compra como respuesta
     return new_purchase

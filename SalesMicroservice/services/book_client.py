@@ -2,7 +2,7 @@ import httpx
 from httpx import ConnectError, HTTPStatusError, RequestError
 from fastapi import HTTPException, status
 
-BOOKS_SERVICE_URL = "http://127.0.0.1:8002/books"
+BOOKS_SERVICE_URL = "http://127.0.0.1:8001/books"
 
 async def get_book(book_id: int):
     try:
@@ -43,12 +43,15 @@ async def get_book(book_id: int):
             detail=f"Error inesperado al obtener el libro: {str(e)}"
         )
 
-async def reduce_stock(book_id: int, quantity: int):
+async def reduce_stock(book_id: int, quantity: int, token: str):
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.patch(
-                f"{BOOKS_SERVICE_URL}/{book_id}/stock",
-                json={"quantity": -quantity}
+            print("Aca estoy")
+            response = await client.put(
+                f"{BOOKS_SERVICE_URL}/update/{book_id}?new_stock={quantity}",
+                headers={
+                    "Authorization": f"Bearer {token}"
+                }
             )
             response.raise_for_status()
 

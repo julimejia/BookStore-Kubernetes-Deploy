@@ -36,3 +36,12 @@ class BookService:
 
     def get_book(self, book_id: int):
         return self.repo.get_by_id(book_id)
+
+
+    def update_stock(self, book_id: int, new_stock: int):
+        book = self.repo.get_by_id(book_id)
+        if not book:
+            return None, "not_found"
+        update_data = {"stock": new_stock}
+        updated_book = self.repo.update_good(book, update_data)  
+        return updated_book, None

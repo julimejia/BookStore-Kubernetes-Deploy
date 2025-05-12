@@ -57,3 +57,27 @@ def delete_book(
     if error == "unauthorized":
         raise HTTPException(status_code=403, detail="Unauthorized")
     return {"message": "Book deleted successfully"}
+
+@router.get("/{book_id}", response_model=BookOut)
+def get_book_by_id(
+    book_id: int,
+    db: Session = Depends(get_db)
+):
+    service = BookService(db)
+    book = service.get_book(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    return book
+
+
+@router.put("/update/{book_id}", response_model=BookOut)
+def update_stock(
+    book_id: int,
+    new_stock: int,
+    db: Session = Depends(get_db)
+):
+    service = BookService(db)
+    book, error = service.update_stock(book_id, new_stock)
+    if error == "not_found":
+        raise HTTPException(status_code=404, detail="Book not found")
+    return book
