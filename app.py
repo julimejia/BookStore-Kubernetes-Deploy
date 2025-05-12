@@ -79,7 +79,7 @@ def read_from_db():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
+        # Asegúrate de usar el bind correcto aquí, se usa el master para crear las tablas
+        db.create_all(bind='master')  # Aquí le dices a SQLAlchemy que use la base de datos maestra
         initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
-
