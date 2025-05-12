@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from extensions import db, login_manager
 from models.user import User
 
@@ -62,11 +62,29 @@ def initialize_delivery_providers():
             db.session.bulk_save_objects(providers)
             db.session.commit()
 
+@app.before_request
+def before_request():
+    """Seleccionar la base de datos según el tipo de operación (lectura o escritura)."""
+    if request.method == "GET":
+        # Para operaciones de lectura, usar la base de datos esclava
+        db.session.remove()  # Eliminar la sesión anterior para evitar reutilización
+        db.session = db.sessionmaker(bind=db.engines['slave'])()
+    elif request.method in ["POST", "PUT", "DELETE"]:
+        # Para operaciones de escritura, usar la base de datos maestra
+        db.session.remove()
+        db.session = db.sessionmaker(bind=db.engines['master'])()
+
+@app.teardown_request
+def teardown_request(exception=None):
+    """Cerrar la sesión al final de cada solicitud."""
+    db.session.remove()
+
 if __name__ == '__main__':
     with app.app_context():
         # Crear las tablas en orden específico si es necesario
         with db.engines['master'].begin() as connection:
             db.metadata.create_all(bind=connection)
             initialize_delivery_providers()
-    
+
     app.run(host="0.0.0.0", debug=True)
+
