@@ -45,7 +45,7 @@ app.register_blueprint(payment)
 app.register_blueprint(delivery)
 app.register_blueprint(admin)
 
-from models import DeliveryProvider
+from models.delivery import DeliveryProvider
 
 def initialize_delivery_providers():
     with app.app_context():
