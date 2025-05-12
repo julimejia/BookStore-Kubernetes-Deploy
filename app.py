@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request
+from sqlalchemy.exc import OperationalError
 from extensions import db, login_manager
 from models.user import User
+import pymysql
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
@@ -62,13 +64,28 @@ def initialize_delivery_providers():
             db.session.bulk_save_objects(providers)
             db.session.commit()
 
+# Función para verificar la conectividad con la base de datos
+def check_master_connection():
+    try:
+        # Intentamos conectarnos al maestro para ver si está disponible
+        with db.engines['master'].connect() as connection:
+            return True  # Si la conexión es exitosa, el maestro está disponible
+    except OperationalError as e:
+        print(f"Error al conectar al maestro: {e}")
+        return False  # El maestro no está disponible
+
 @app.before_request
 def before_request():
     """Seleccionar la base de datos según el tipo de operación (lectura o escritura)."""
     if request.method == "GET":
-        # Para operaciones de lectura, usar la base de datos esclava
-        db.session.remove()  # Eliminar la sesión anterior para evitar reutilización
-        db.session = db.sessionmaker(bind=db.engines['slave'])()
+        # Si el maestro no está disponible, usa el esclavo para lecturas
+        if not check_master_connection():
+            print("El maestro no está disponible. Usando el esclavo para lecturas.")
+            db.session.remove()  # Eliminar la sesión anterior para evitar reutilización
+            db.session = db.sessionmaker(bind=db.engines['slave'])()  # Usar el esclavo
+        else:
+            db.session.remove()  # Eliminar la sesión anterior
+            db.session = db.sessionmaker(bind=db.engines['slave'])()  # Usar el esclavo para lectura
     elif request.method in ["POST", "PUT", "DELETE"]:
         # Para operaciones de escritura, usar la base de datos maestra
         db.session.remove()
@@ -87,4 +104,3 @@ if __name__ == '__main__':
             initialize_delivery_providers()
 
     app.run(host="0.0.0.0", debug=True)
-
