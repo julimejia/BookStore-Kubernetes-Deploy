@@ -1,7 +1,7 @@
 from flask import Flask, render_template
 from extensions import db, login_manager
 from models.user import User
-from sqlalchemy.exc import OperationalError
+from models.delivery import DeliveryProvider
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
@@ -43,48 +43,29 @@ app.register_blueprint(payment)
 app.register_blueprint(delivery)
 app.register_blueprint(admin)
 
-from models.delivery import DeliveryProvider
-
 def initialize_delivery_providers():
     with app.app_context():
-        if DeliveryProvider.query.count() == 0:
-            providers = [
-                DeliveryProvider(name="DHL", coverage_area="Internacional", cost=50.0),
-                DeliveryProvider(name="FedEx", coverage_area="Internacional", cost=45.0),
-                DeliveryProvider(name="Envia", coverage_area="Nacional", cost=20.0),
-                DeliveryProvider(name="Servientrega", coverage_area="Nacional", cost=15.0),
-            ]
-            db.session.bulk_save_objects(providers)
-            db.session.commit()
+        # Asegurarse de que se use el bind 'master' al realizar la consulta
+        with db.get_engine(app, bind='master').connect() as connection:
+            db.session.bind = connection
+            if DeliveryProvider.query.count() == 0:
+                providers = [
+                    DeliveryProvider(name="DHL", coverage_area="Internacional", cost=50.0),
+                    DeliveryProvider(name="FedEx", coverage_area="Internacional", cost=45.0),
+                    DeliveryProvider(name="Envia", coverage_area="Nacional", cost=20.0),
+                    DeliveryProvider(name="Servientrega", coverage_area="Nacional", cost=15.0),
+                ]
+                db.session.bulk_save_objects(providers)
+                db.session.commit()
 
 @app.route('/')
 def home():
     return render_template('home.html')
 
-# Ruta para escribir en la base de datos (Master)
-@app.route('/write')
-def write_to_db():
-    # Especificar el bind explícitamente para la base de datos maestra
-    with db.get_engine(app, bind='master').connect() as connection:
-        db.session.bind = connection
-        # Realizar operaciones de escritura como insert/update/delete
-    return "Escritura exitosa en la base de datos maestra."
-
-# Ruta para leer de la base de datos (Slave)
-@app.route('/read')
-def read_from_db():
-    # Especificar el bind explícitamente para la base de datos esclava
-    with db.get_engine(app, bind='slave').connect() as connection:
-        db.session.bind = connection
-        # Realizar operaciones de lectura como select
-    return "Lectura exitosa desde la base de datos esclava."
-
 if __name__ == '__main__':
     with app.app_context():
         # Crear las tablas utilizando el motor de la base de datos maestra
         with db.get_engine(app, bind='master').connect() as connection:
-            # Crear las tablas manualmente usando el engine
-            db.metadata.create_all(connection)
+            db.metadata.create_all(connection)  # Crear tablas en la base de datos maestra
             initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
-
