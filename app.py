@@ -64,7 +64,6 @@ def home():
 # Ruta para escribir en la base de datos (Master)
 @app.route('/write')
 def write_to_db():
-    # Aquí se conecta a la base de datos maestra para realizar escrituras
     db.session.bind = db.get_engine(app, bind='master')
     # Realizar operaciones de escritura como insert/update/delete
     return "Escritura exitosa en la base de datos maestra."
@@ -72,14 +71,15 @@ def write_to_db():
 # Ruta para leer de la base de datos (Slave)
 @app.route('/read')
 def read_from_db():
-    # Aquí se conecta a la base de datos esclava para realizar lecturas
     db.session.bind = db.get_engine(app, bind='slave')
     # Realizar operaciones de lectura como select
     return "Lectura exitosa desde la base de datos esclava."
 
 if __name__ == '__main__':
     with app.app_context():
-        # Asegúrate de usar el bind correcto aquí, se usa el master para crear las tablas
-        db.create_all(bind='master')  # Aquí le dices a SQLAlchemy que use la base de datos maestra
-        initialize_delivery_providers()
+        # Crear las tablas utilizando el motor de la base de datos maestra
+        with db.get_engine(app, bind='master').connect() as connection:
+            db.create_all(bind='master')  # Aquí se crea todo en la base de datos maestra
+            initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
+
