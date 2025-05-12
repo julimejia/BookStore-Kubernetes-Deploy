@@ -83,7 +83,8 @@ if __name__ == '__main__':
     with app.app_context():
         # Crear las tablas utilizando el motor de la base de datos maestra
         with db.get_engine(app, bind='master').connect() as connection:
-            db.create_all(bind='master')  # Aquí se crea todo en la base de datos maestra
+            # Crear las tablas manualmente usando el engine
+            db.metadata.create_all(connection)
             initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
 
