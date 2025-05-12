@@ -1,7 +1,8 @@
 from flask import Flask, render_template
 from extensions import db, login_manager
 from models.user import User
-from models.delivery import DeliveryProvider
+
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
@@ -43,6 +44,8 @@ app.register_blueprint(purchase)
 app.register_blueprint(payment)
 app.register_blueprint(delivery)
 app.register_blueprint(admin)
+
+from models import DeliveryProvider
 
 def initialize_delivery_providers():
     with app.app_context():
