@@ -64,8 +64,8 @@ def home():
 # Ruta para escribir en la base de datos (Master)
 @app.route('/write')
 def write_to_db():
-    # Usar el engine directamente para conectar con la base de datos maestra
-    with db.engine.connect() as connection:
+    # Especificar el bind explícitamente para la base de datos maestra
+    with db.get_engine(app, bind='master').connect() as connection:
         db.session.bind = connection
         # Realizar operaciones de escritura como insert/update/delete
     return "Escritura exitosa en la base de datos maestra."
@@ -73,16 +73,17 @@ def write_to_db():
 # Ruta para leer de la base de datos (Slave)
 @app.route('/read')
 def read_from_db():
-    # Usar el engine directamente para conectar con la base de datos esclava
-    with db.engine.connect() as connection:
+    # Especificar el bind explícitamente para la base de datos esclava
+    with db.get_engine(app, bind='slave').connect() as connection:
         db.session.bind = connection
         # Realizar operaciones de lectura como select
     return "Lectura exitosa desde la base de datos esclava."
 
 if __name__ == '__main__':
     with app.app_context():
-        # Crear las tablas utilizando el engine de la base de datos maestra
-        with db.engine.connect() as connection:
+        # Crear las tablas utilizando el motor de la base de datos maestra
+        with db.get_engine(app, bind='master').connect() as connection:
             db.create_all(bind='master')  # Aquí se crea todo en la base de datos maestra
             initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
+
