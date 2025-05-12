@@ -1,6 +1,7 @@
 from extensions import db
 
 class Payment(db.Model):
+    __bind_key__ = 'master'
     id = db.Column(db.Integer, primary_key=True)
     purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'))
     amount = db.Column(db.Float)
