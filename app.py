@@ -70,8 +70,9 @@ if __name__ == '__main__':
     with app.app_context():
         # Crear las tablas utilizando el motor de la base de datos maestra
         with db.engines['master'].connect() as connection:
-            if __name__ == '__main__':
-    with app.app_context():
+            
+if __name__ == '__main__':
+        with app.app_context():
         # Explicit table creation order
         with db.engines['master'].begin() as connection:
             # Create tables without foreign keys first
