@@ -46,7 +46,7 @@ app.register_blueprint(admin)
 def initialize_delivery_providers():
     with app.app_context():
         # Asegurarse de que se use el bind 'master' al realizar la consulta
-        with db.get_engine(app, bind='master').connect() as connection:
+        with db.engines['master'].connect() as connection:
             db.session.bind = connection
             if DeliveryProvider.query.count() == 0:
                 providers = [
@@ -65,7 +65,7 @@ def home():
 if __name__ == '__main__':
     with app.app_context():
         # Crear las tablas utilizando el motor de la base de datos maestra
-        with db.get_engine(app, bind='master').connect() as connection:
+        with db.engines['master'].connect() as connection:
             db.metadata.create_all(connection)  # Crear tablas en la base de datos maestra
             initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
