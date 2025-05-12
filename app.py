@@ -1,8 +1,9 @@
 from flask import Flask, render_template
 from extensions import db, login_manager
 from models.user import User
-
-
+from models.delivery import DeliveryProvider
+from models.purchase import Purchase
+from models.delivery_assignment import DeliveryAssignment
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
@@ -19,8 +20,7 @@ app.config['SQLALCHEMY_BINDS'] = {
     'slave': slave_db_uri
 }
 
-
-# Configuración de la base de datos con SQLAlchemy
+# Inicializar extensiones
 db.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
@@ -37,7 +37,6 @@ from controllers.payment_controller import payment
 from controllers.delivery_controller import delivery
 from controllers.admin_controller import admin
 
-# Registrar blueprints
 app.register_blueprint(auth)
 app.register_blueprint(book, url_prefix='/book')
 app.register_blueprint(purchase)
@@ -45,46 +44,34 @@ app.register_blueprint(payment)
 app.register_blueprint(delivery)
 app.register_blueprint(admin)
 
-from models.delivery import DeliveryProvider
-
-def initialize_delivery_providers():
-    with app.app_context():
-        # Asegurarse de que se use el bind 'master' al realizar la consulta
-        with db.engines['master'].connect() as connection:
-            db.session.bind = connection
-            if DeliveryProvider.query.count() == 0:
-                providers = [
-                    DeliveryProvider(name="DHL", coverage_area="Internacional", cost=50.0),
-                    DeliveryProvider(name="FedEx", coverage_area="Internacional", cost=45.0),
-                    DeliveryProvider(name="Envia", coverage_area="Nacional", cost=20.0),
-                    DeliveryProvider(name="Servientrega", coverage_area="Nacional", cost=15.0),
-                ]
-                db.session.bulk_save_objects(providers)
-                db.session.commit()
-
 @app.route('/')
 def home():
     return render_template('home.html')
 
+def initialize_delivery_providers():
+    with db.engines['master'].connect() as connection:
+        db.session.bind = connection
+        if DeliveryProvider.query.count() == 0:
+            providers = [
+                DeliveryProvider(name="DHL", coverage_area="Internacional", cost=50.0),
+                DeliveryProvider(name="FedEx", coverage_area="Internacional", cost=45.0),
+                DeliveryProvider(name="Envia", coverage_area="Nacional", cost=20.0),
+                DeliveryProvider(name="Servientrega", coverage_area="Nacional", cost=15.0),
+            ]
+            db.session.bulk_save_objects(providers)
+            db.session.commit()
+
 if __name__ == '__main__':
     with app.app_context():
-        # Crear las tablas utilizando el motor de la base de datos maestra
-        with db.engines['master'].connect() as connection:
-            
-if __name__ == '__main__':
-        with app.app_context():
-        # Explicit table creation order
+        # Crear las tablas en orden específico si es necesario
         with db.engines['master'].begin() as connection:
-            # Create tables without foreign keys first
-            db.metadata.tables['delivery_provider'].create(connection)
-            db.metadata.tables['purchase'].create(connection)
-            
-            # Then create tables with foreign keys
-            db.metadata.tables['delivery_assignment'].create(connection)
-            
+            # Crear tablas sin foreign keys primero
+            db.metadata.tables['delivery_provider'].create(connection, checkfirst=True)
+            db.metadata.tables['purchase'].create(connection, checkfirst=True)
+
+            # Luego tablas con claves foráneas
+            db.metadata.tables['delivery_assignment'].create(connection, checkfirst=True)
+
         initialize_delivery_providers()
     
-    app.run(host="0.0.0.0", debug=True)
-            db.metadata.create_all(connection)  # Crear tablas en la base de datos maestra
-            initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
