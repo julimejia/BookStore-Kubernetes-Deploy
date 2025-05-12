@@ -1,12 +1,33 @@
 from flask import Flask, render_template
 from extensions import db, login_manager
 from models.user import User
+from sqlalchemy.exc import OperationalError
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bookstore.db'
 
-db.init_app(app)
+# URI de la base de datos primaria (SQLite)
+primary_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@34.196.144.93:3306/bookstore'
+
+# URI de la base de datos secundaria (MySQL) con las credenciales proporcionadas
+secondary_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@54.210.119.201:3306/bookstore'
+
+# Intentar conectar a la base de datos primaria
+try:
+    app.config['SQLALCHEMY_DATABASE_URI'] = primary_db_uri
+    db.init_app(app)
+    print("Conexión exitosa a la base de datos primaria (SQLite)")
+except OperationalError as e:
+    print(f"Error al conectar con la base de datos primaria, intentando con la base de datos secundaria: {e}")
+    
+    # Si la base de datos primaria falla, intenta conectarse a la base de datos secundaria (MySQL)
+    try:
+        app.config['SQLALCHEMY_DATABASE_URI'] = secondary_db_uri
+        db.init_app(app)
+        print("Conexión exitosa a la base de datos secundaria (MySQL)")
+    except OperationalError as e:
+        print(f"Error al conectar con la base de datos secundaria: {e}")
+
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
@@ -49,8 +70,7 @@ def home():
     return render_template('home.html')
 
 if __name__ == '__main__':
-# OJO este conexto crea las tablas e inicia los proveedores de entrega, 
-# se debe ejecutar cada que se reinstala y ejecuta la aplicación Bookstore
+    # Crear las tablas e inicializar los proveedores de entrega
     with app.app_context():
         db.create_all()
         initialize_delivery_providers()
