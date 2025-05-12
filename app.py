@@ -1,5 +1,4 @@
-from flask import Flask, request
-from sqlalchemy.exc import OperationalError
+from flask import Flask, render_template
 from extensions import db, login_manager
 from models.user import User
 
@@ -20,52 +19,54 @@ app.config['SQLALCHEMY_BINDS'] = {
 
 # Inicializar extensiones
 db.init_app(app)
+login_manager.init_app(app)
+login_manager.login_view = 'auth.login'
 
-# Función para verificar la conectividad con la base de datos
-def check_master_connection():
-    try:
-        with db.engines['master'].connect() as connection:
-            return True  # Si la conexión es exitosa, el maestro está disponible
-    except OperationalError as e:
-        print(f"Error al conectar al maestro: {e}")
-        return False  # El maestro no está disponible
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
-@app.before_request
-def before_request():
-    """Seleccionar la base de datos según el tipo de operación (lectura o escritura)."""
-    # Verifica si el maestro está disponible
-    if request.method == "GET":
-        # Si el maestro no está disponible, usar el esclavo para lecturas
-        if not check_master_connection():
-            print("El maestro no está disponible. Usando el esclavo para lecturas.")
-            db.session.remove()  # Eliminar la sesión anterior para evitar reutilización
-            db.session = db.sessionmaker(bind=db.engines['slave'])()  # Usar el esclavo
-            # Cambiar dinámicamente el bind de los modelos a 'slave'
-            for model in db.Model._decl_class_registry.values():
-                if hasattr(model, '__bind_key__'):
-                    model.__bind_key__ = 'slave'
-        else:
-            db.session.remove()  # Eliminar la sesión anterior
-            db.session = db.sessionmaker(bind=db.engines['slave'])()  # Usar el esclavo para lectura
-            # Cambiar dinámicamente el bind de los modelos a 'master'
-            for model in db.Model._decl_class_registry.values():
-                if hasattr(model, '__bind_key__'):
-                    model.__bind_key__ = 'master'
-    elif request.method in ["POST", "PUT", "DELETE"]:
-        # Para operaciones de escritura, usar la base de datos maestra
-        db.session.remove()
-        db.session = db.sessionmaker(bind=db.engines['master'])()
-        # Cambiar dinámicamente el bind de los modelos a 'master'
-        for model in db.Model._decl_class_registry.values():
-            if hasattr(model, '__bind_key__'):
-                model.__bind_key__ = 'master'
+# Registrar blueprints
+from controllers.auth_controller import auth
+from controllers.book_controller import book
+from controllers.purchase_controller import purchase
+from controllers.payment_controller import payment
+from controllers.delivery_controller import delivery
+from controllers.admin_controller import admin
 
-@app.teardown_request
-def teardown_request(exception=None):
-    """Cerrar la sesión al final de cada solicitud."""
-    db.session.remove()
+app.register_blueprint(auth)
+app.register_blueprint(book, url_prefix='/book')
+app.register_blueprint(purchase)
+app.register_blueprint(payment)
+app.register_blueprint(delivery)
+app.register_blueprint(admin)
 
-# Resto del código...
+from models.delivery import DeliveryProvider
+from models.purchase import Purchase
+from models.delivery_assignment import DeliveryAssignment
+
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+def initialize_delivery_providers():
+    with db.engines['master'].connect() as connection:
+        db.session.bind = connection
+        if DeliveryProvider.query.count() == 0:
+            providers = [
+                DeliveryProvider(name="DHL", coverage_area="Internacional", cost=50.0),
+                DeliveryProvider(name="FedEx", coverage_area="Internacional", cost=45.0),
+                DeliveryProvider(name="Envia", coverage_area="Nacional", cost=20.0),
+                DeliveryProvider(name="Servientrega", coverage_area="Nacional", cost=15.0),
+            ]
+            db.session.bulk_save_objects(providers)
+            db.session.commit()
 
 if __name__ == '__main__':
+    with app.app_context():
+        # Crear las tablas en orden específico si es necesario
+        with db.engines['master'].begin() as connection:
+            db.metadata.create_all(bind=connection)
+            initialize_delivery_providers()
+    
     app.run(host="0.0.0.0", debug=True)
