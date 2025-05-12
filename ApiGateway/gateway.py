@@ -1,14 +1,25 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Mapeo de prefijos de ruta a microservicios
 SERVICE_MAP = {
-    "users": "http://localhost:8001",
-    "orders": "http://localhost:8002",
-    "payments": "http://localhost:8003",
+    "auth": "http://localhost:8001",
+    "books": "http://localhost:8002",
+    "payment": "http://localhost:8003",
+    "delivery": "http://localhost:8003",
+    "purchase": "http://localhost:8003",
 }
 
 @app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
@@ -16,7 +27,9 @@ async def gateway(service: str, path: str, request: Request):
     if service not in SERVICE_MAP:
         return JSONResponse(status_code=404, content={"detail": "Servicio no encontrado"})
 
-    target_url = f"{SERVICE_MAP[service]}/{path}"
+    target_url = f"{SERVICE_MAP[service]}/{service}/{path}"
+    print(f"Gateway redirige a: {target_url}")
+
 
     try:
         # Extrae datos de la solicitud original

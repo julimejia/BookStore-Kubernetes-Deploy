@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import exc
 import os
 
-DATABASE_URL = "postgresql://Polnareff:26910531camila@localhost/Microservicios"
+DATABASE_URL = "postgresql://postgres:EmasT2024.@localhost/FromMonolithicToMicro"
 
 
 engine = create_engine(DATABASE_URL, connect_args={})

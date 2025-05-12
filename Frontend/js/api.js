@@ -1,4 +1,4 @@
-const API_BASE = "https://localhost:8000"; // apunta a tu gateway
+const API_BASE = "http://localhost:8000"; // apunta a tu gateway
 
 const endpoints = {
   login: `${API_BASE}/auth/login`,

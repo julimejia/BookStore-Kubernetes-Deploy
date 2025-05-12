@@ -27,6 +27,21 @@
 <script src="js/catalogo.js"></script>
 <script>
   renderNavbar(); // Lógica para renderizar el navbar
+
+    // Delegación: escucha clics en todo el navbar
+    document.getElementById("nav-links").addEventListener("click", (event) => {
+    if (event.target && event.target.id === "mis-libros-btn") {
+      event.preventDefault();
+      mostrarCatalogo();  // función que carga libros y muestra el catálogo
+    }
+  });
+
+  // Función que carga los libros dinámicamente
+  async function mostrarCatalogo() {
+    const container = document.querySelector(".container");
+    container.innerHTML = `<h2>Catálogo</h2><div id="libros" class="row"></div>`;
+    await fetchBooks();
+  }
 </script>
 </body>
 </html>

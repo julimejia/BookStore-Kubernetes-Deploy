@@ -8,7 +8,7 @@ from utils.jwt import get_current_user_id, oauth2_scheme
 
 router = APIRouter()
 
-@router.post("/purchase", response_model=PurchaseOut)
+@router.post("/", response_model=PurchaseOut)
 async def create_purchase(
     purchase: PurchaseCreate,
     user_id: int = Depends(get_current_user_id),  # Obtener el user_id como dependencia

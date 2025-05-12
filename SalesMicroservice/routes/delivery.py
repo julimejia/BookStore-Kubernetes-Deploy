@@ -7,9 +7,9 @@ from schemas.delivery import DeliveryProviderOut
 from schemas.delivery_ass import DeliveryAssignmentCreate
 from typing import List
 
-router = APIRouter(prefix="/delivery", tags=["delivery"])
+router = APIRouter()
 
-@router.get("/providers", response_model=List[DeliveryProviderOut])
+@router.get("/", response_model=List[DeliveryProviderOut])
 def get_providers(db: Session = Depends(get_db)):
     providers = db.query(DeliveryProvider).all()
     return providers

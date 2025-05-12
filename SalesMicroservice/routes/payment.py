@@ -10,6 +10,6 @@ from services.payment_service import create_payment_and_update_purchase
 
 
 router = APIRouter()
-@router.post("/payments/", response_model=PaymentOut)
+@router.post("/", response_model=PaymentOut)
 def make_payment(payment: PaymentCreate, db: Session = Depends(get_db)):
     return create_payment_and_update_purchase(db, payment)

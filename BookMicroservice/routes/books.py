@@ -20,7 +20,7 @@ def get_my_books(
     service = BookService(db)
     return service.list_books_by_seller(seller_id)
 
-@router.post("/", response_model=BookOut)
+@router.post("", response_model=BookOut)
 def create_book(
     book: BookBase,
     seller_id: int = Depends(get_current_user_id),

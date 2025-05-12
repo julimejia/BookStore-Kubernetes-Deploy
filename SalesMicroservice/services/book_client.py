@@ -2,7 +2,7 @@ import httpx
 from httpx import ConnectError, HTTPStatusError, RequestError
 from fastapi import HTTPException, status
 
-BOOKS_SERVICE_URL = "http://127.0.0.1:8001/books"
+BOOKS_SERVICE_URL = "http://127.0.0.1:8002/books"
 
 async def get_book(book_id: int):
     try:
