@@ -70,6 +70,20 @@ if __name__ == '__main__':
     with app.app_context():
         # Crear las tablas utilizando el motor de la base de datos maestra
         with db.engines['master'].connect() as connection:
+            if __name__ == '__main__':
+    with app.app_context():
+        # Explicit table creation order
+        with db.engines['master'].begin() as connection:
+            # Create tables without foreign keys first
+            db.metadata.tables['delivery_provider'].create(connection)
+            db.metadata.tables['purchase'].create(connection)
+            
+            # Then create tables with foreign keys
+            db.metadata.tables['delivery_assignment'].create(connection)
+            
+        initialize_delivery_providers()
+    
+    app.run(host="0.0.0.0", debug=True)
             db.metadata.create_all(connection)  # Crear tablas en la base de datos maestra
             initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
