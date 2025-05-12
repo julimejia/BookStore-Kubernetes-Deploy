@@ -65,13 +65,7 @@ if __name__ == '__main__':
     with app.app_context():
         # Crear las tablas en orden específico si es necesario
         with db.engines['master'].begin() as connection:
-            # Crear tablas sin foreign keys primero
-            db.metadata.tables['delivery_provider'].create(connection, checkfirst=True)
-            db.metadata.tables['purchase'].create(connection, checkfirst=True)
-
-            # Luego tablas con claves foráneas
-            db.metadata.tables['delivery_assignment'].create(connection, checkfirst=True)
-
-        initialize_delivery_providers()
+             db.create_all()
+             initialize_delivery_providers()
     
     app.run(host="0.0.0.0", debug=True)
