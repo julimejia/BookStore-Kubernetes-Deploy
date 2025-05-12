@@ -8,4 +8,4 @@ class DeliveryProvider(db.Model):
     coverage_area = db.Column(db.String(150))
     cost = db.Column(db.Float)
 
-     assignments = db.relationship('DeliveryAssignment', back_populates='provider')
+    assignments = db.relationship('DeliveryAssignment', back_populates='provider')
