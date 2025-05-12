@@ -7,10 +7,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
 
 # Conexión a la base de datos maestra (para escrituras)
-master_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@34.196.144.93:3306/bookstore'
+master_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@34.196.144.93:3307/bookstore'
 
 # Conexión a la base de datos esclava (para lecturas)
-slave_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@54.210.119.201:3306/bookstore'
+slave_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@54.210.119.201:3307/bookstore'
 
 # Configurar SQLAlchemy para manejar conexiones al master y al slave
 app.config['SQLALCHEMY_BINDS'] = {
