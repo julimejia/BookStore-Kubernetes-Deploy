@@ -6,28 +6,20 @@ from sqlalchemy.exc import OperationalError
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secretkey'
 
-# URI de la base de datos primaria (SQLite)
-primary_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@34.196.144.93:3306/bookstore'
+# Conexión a la base de datos maestra (para escrituras)
+master_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@34.196.144.93:3306/bookstore'
 
-# URI de la base de datos secundaria (MySQL) con las credenciales proporcionadas
-secondary_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@54.210.119.201:3306/bookstore'
+# Conexión a la base de datos esclava (para lecturas)
+slave_db_uri = 'mysql+pymysql://bookstore_user:bookstore_pass@54.210.119.201:3306/bookstore'
 
-# Intentar conectar a la base de datos primaria
-try:
-    app.config['SQLALCHEMY_DATABASE_URI'] = primary_db_uri
-    db.init_app(app)
-    print("Conexión exitosa a la base de datos primaria (SQLite)")
-except OperationalError as e:
-    print(f"Error al conectar con la base de datos primaria, intentando con la base de datos secundaria: {e}")
-    
-    # Si la base de datos primaria falla, intenta conectarse a la base de datos secundaria (MySQL)
-    try:
-        app.config['SQLALCHEMY_DATABASE_URI'] = secondary_db_uri
-        db.init_app(app)
-        print("Conexión exitosa a la base de datos secundaria (MySQL)")
-    except OperationalError as e:
-        print(f"Error al conectar con la base de datos secundaria: {e}")
+# Configurar SQLAlchemy para manejar conexiones al master y al slave
+app.config['SQLALCHEMY_BINDS'] = {
+    'master': master_db_uri,
+    'slave': slave_db_uri
+}
 
+# Configuración de la base de datos con SQLAlchemy
+db.init_app(app)
 login_manager.init_app(app)
 login_manager.login_view = 'auth.login'
 
@@ -35,7 +27,7 @@ login_manager.login_view = 'auth.login'
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Luego importar blueprints
+# Registrar blueprints
 from controllers.auth_controller import auth
 from controllers.book_controller import book
 from controllers.purchase_controller import purchase
@@ -69,9 +61,25 @@ def initialize_delivery_providers():
 def home():
     return render_template('home.html')
 
+# Ruta para escribir en la base de datos (Master)
+@app.route('/write')
+def write_to_db():
+    # Aquí se conecta a la base de datos maestra para realizar escrituras
+    db.session.bind = db.get_engine(app, bind='master')
+    # Realizar operaciones de escritura como insert/update/delete
+    return "Escritura exitosa en la base de datos maestra."
+
+# Ruta para leer de la base de datos (Slave)
+@app.route('/read')
+def read_from_db():
+    # Aquí se conecta a la base de datos esclava para realizar lecturas
+    db.session.bind = db.get_engine(app, bind='slave')
+    # Realizar operaciones de lectura como select
+    return "Lectura exitosa desde la base de datos esclava."
+
 if __name__ == '__main__':
-    # Crear las tablas e inicializar los proveedores de entrega
     with app.app_context():
         db.create_all()
         initialize_delivery_providers()
     app.run(host="0.0.0.0", debug=True)
+
