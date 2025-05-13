@@ -291,60 +291,197 @@ utilizando Máquinas Virtuales (VM) con autoescalamiento, base de datos aparte A
 es implementada con VM con Alta Disponibilidad, y Archivos compartidos vía NFS (como un servicio
 o una VM con NFS con Alta Disponibilidad).
 
-1 AMI app monolitica
 
-   1 Creacion
-     - Cree una instancia EC2 t2 micro 8 de almacenamiento, con al vpc por default o la que vaya a contener todo el proyecto,  y con el grupo de reglas default o el que vaya a usar todo el proyecto
-     
-   2 Clonacion y funcionamiento
-     - clone el repositorio de github dentro de la consola de la instancia
-     - Actualice la instancia, upgradee la instancia
-     - instale python en la instancia
-     - entre en la carpeta del repositorio
-     - cree un entorno virtual de python
-     - Ingrese al mismo
-     - Instale dependencias
-     - corra el proyecto
-     
-2 Auto Scaling group
+# 🏗️ Proyecto AWS - Despliegue App Monolítica
+
+---
+
+## 1. AMI App Monolítica
+
+### 1.1 Creación de la instancia base
+
+- Crear una **instancia EC2 t2.micro** con:
+  - **8 GB de almacenamiento**
+  - **VPC por defecto** o una personalizada para el proyecto
+  - **Grupo de seguridad** por defecto o uno propio para el proyecto
+
+### 1.2 Clonación y configuración del entorno
+
+```bash
+# Conectarse a la instancia
+ssh -i "clave.pem" ec2-user@<IP_PUBLICA>
+
+# Clonar el repositorio
+git clone <URL_DEL_REPOSITORIO>
+
+# Actualizar paquetes
+sudo apt update && sudo apt upgrade -y
+
+# Instalar Python
+sudo apt install python3 python3-venv python3-pip -y
+
+# Entrar en la carpeta del proyecto
+cd nombre-del-repositorio
+
+# Crear y activar entorno virtual
+python3 -m venv venv
+source venv/bin/activate
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Correr el proyecto (ejemplo con Flask)
+python app.py
+```
+
+---
+
+## 2. Auto Scaling Group
+
+### 2.1 Crear una plantilla de lanzamiento
+
+1. Ir a **EC2 > Auto Scaling > Configuraciones de lanzamiento**
+2. Clic en **Crear configuración**
+3. Seguir el tutorial oficial:  
+   🔗 [Guía oficial AWS Auto Scaling](https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-your-first-auto-scaling-group.html)
+
+### 2.2 Crear el Auto Scaling Group
+
+- Seleccionar la **plantilla de lanzamiento**
+- Elegir la **VPC deseada**
+- Usar **al menos 2 zonas de disponibilidad (AZs)**
+- Mantener el resto de opciones por defecto
+- Crear el grupo
+
+- Cabe recalcar que se tiene que poner un USERDATA que setee las instancias que van a funcionar
+
+```bash
+  #!/bin/bash
+
+sudo rm /usr/lib/python3.*/EXTERNALLY-MANAGED
+# Actualizar el sistema
+sudo apt-get update -y
+sudo apt-get upgrade -y
+
+# Instalar Python 3, pip, venv y Git si no estÃ¡n instalados
+sudo apt-get install -y python3 python3-pip python3-venv git
+
+# Clonar el repositorio si no existe
+if [ ! -d "BookStore-Kubernetes-Deploy" ]; then
+  git clone https://github.com/julimejia/BookStore-Kubernetes-Deploy.git
+fi
+
+# Cambiar permisos del repositorio
+sudo chown -R $USER:$USER BookStore-Kubernetes-Deploy
+
+sudo apt-get install nfs-common -y
+
+sudo mkdir efs
+
+sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-0bbf30e00ec2f106a.efs.us-east-1.amazonaws.com:/ efs
+
+cd BookStore-Kubernetes-Deploy
+
+# Crear entorno virtual si no existe
+if [ ! -d "venv" ]; then
+  python3 -m venv venv
+fi
+
+# Activar entorno virtual
+source venv/bin/activate
+
+sudo chown -R ubuntu:ubuntu venv
+
+pip install -r requirements.txt
+
+python app.py
+```
+
+### 2.3 Lanzamiento
+
+- Ir a **EC2 > Auto Scaling Groups**
+- Seleccionar el grupo y lanzar una nueva instancia con la plantilla creada
+
+---
+
+## 3. Load Balancer
+
+### 3.1 Crear el Load Balancer
+
+1. Ir a **EC2 > Load Balancers**
+2. Crear un grupo de destino con las instancias que se balancearán
+3. Crear un nuevo Load Balancer:
+   - Tipo: **HTTP/HTTPS**
+   - AZs: las mismas del Auto Scaling Group
+   - Otras configuraciones: por defecto
+
+### 3.2 Vincular al Auto Scaling Group
+
+1. Ir al **Auto Scaling Group**
+2. Editar configuraciones
+3. En **Balanceador de carga > Grupo de destino**
+   - Seleccionar el grupo de destino creado previamente
+
+---
+
+## 4. Base de Datos (con Master-Slave)
+
+### 4.1 Instancia Master
+
+1. Crear una **instancia EC2** para la base de datos
+2. Instalar Docker:
+
+```bash
+sudo apt update && sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+3. Crear una imagen de Docker para la base de datos o usar una existente:
+
+```bash
+docker run --name mysql-master -e MYSQL_ROOT_PASSWORD=admin -d mysql:latest
+```
+
+### 4.2 Instancia Slave
+
+1. Repetir los pasos 1 a 3 en una nueva instancia
+2. Configurar replicación:
+   - Crear usuario **replica** en el master
+   - Obtener información binlog del master (`SHOW MASTER STATUS`)
+   - En el slave, configurar `CHANGE MASTER TO` y ejecutar `START SLAVE`
+
+---
+
+## 5. EFS (NFS)
+
+### 5.1 Crear EFS
+
+1. Ir a **EFS > Crear sistema de archivos**
+2. Configurar:
+   - Usar una **VPC existente**
+   - Crear un nuevo **grupo de seguridad** con permisos adecuados para NFS (puerto TCP 2049)
+   - Asociarlo con los grupos de seguridad ya usados por las instancias EC2
+
+### 5.2 Conectar EFS a una instancia EC2
+
+```bash
+# Crear directorio para montar
+sudo mkdir /mnt/efs
+
+# Instalar NFS (si no está instalado)
+sudo apt install nfs-common -y
+
+# Montar el EFS (reemplazar fs-12345678 con tu ID)
+sudo mount -t nfs4 -o nfsvers=4.1 fs-12345678.efs.us-east-1.amazonaws.com:/ /mnt/efs
+```
+
+> 📌 **Tip:** Para montarlo automáticamente al iniciar, agrega al `/etc/fstab`:
+```bash
+fs-12345678.efs.us-east-1.amazonaws.com:/ /mnt/efs nfs4 defaults,_netdev 0 0
+```
+
   
-  1 Creacion de la plantilla del auto scaling group
-   - Vaya a EC2
-   - Click en Auto scaling en el side bar de la izquierda
-   - Grupos de AutoScaling
-   - y click en crear una configuracion
-   - Luego siga los pasos del siguiente tutorial para la plantilla : https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-your-first-auto-scaling-group.html
-  
-     
-  2 Crear el auto scaling
-    - Seleccionar la plantilla 
-    - Escoja la vpc que desee, si no tiene la default
-    - Use almenos 2 zonas de disponibilidad 
-    - Todo lo demas dejelo por default
-    - Cree el grupo
-  3 Lanzamiento
-    - Dentro de la consola EC2 vaya a auto scaling group
-    - vaya a la parte de lanzar uno nuevo.
-    - seleccione la plantilla ya creada
-  
-2 Load balancer 
-   1 Creacion del load balancer 
-    - Dentro de la consola EC2 vaya a load balancer
-    - Cree un grupo (Las instancias que va a balancear)
-    - Vaya al apartado de creacion
-    - Seleccione HTTP/HTTPS
-    - Seleccione las mismas zonas de disponibilidad del autoscaling group
-    - todo lo demas en default
-    - cree la instancia
-    
-  2 Añadir la instancia al AutoScaling group
-    - Vaya al autoScaling group que ya creo 
-    - Vaya al apartado de editar
-    - vaya al apartado balanceador de carga
-    - Seleccione grupos destino
-    - Seleccione el grupo que ha creado
-3 Base de datos
-  1 Cree un EC2 para almacenar la base de datos
   
 
 
