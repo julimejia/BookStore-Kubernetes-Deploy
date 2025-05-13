@@ -354,6 +354,16 @@ o una VM con NFS con Alta Disponibilidad).
 o Microservicio 1: Autenticación: gestionará register, login, logout.
 o Microservicio 2: Catalogo: permitirá visualizar la oferta de libros en la plataforma.
 o Microservicio 3: Compra, Pago y Entrega de libros que se venden por la plataforma.
+   
+   Para la creacion de los microservicios se decidio usar FastApi en lugar de Flask, continuamos con REST para la comunicacion, y se utiliza una persistencia de datos en Postgresql.
+   Cada microservicio maneja una arquitectura por capas, endpoint - logica - entidad. Para el microservicios de books se utiliza un repositorio para las actividades de CRUD ya que en este microservicio son las
+   mas recurrentes. El microservicio de Sales (Encargado de las ventas) se comunica con el microservicio de Books para la consulta de material y la actualizacion del mismo. 
+   Para el Apigateway se tuvo en cuenta la observacion del proyecto pasado, siendo este mas "generico" para la facil actualizacion (Solo se debe agregar la ruta a la cual se quiere redireccionar). 
+   Cada microservicio maneja su propia persistencia de datos. 
+   Para el manejo de la sesion se utiliza un JWT que carga con el correo y el id del usuario. Este es necesario para crear libros entre otras actividades. (Hay endpoints que en el front no se utilizan pero se
+   desarrollaron con el fin de hacer debug).
+   En el frontend (Cliente) se utiliza HTML + js.   
+
    ![image](https://github.com/user-attachments/assets/980e5547-69df-450a-9479-5972f685a7d6)
 
 
