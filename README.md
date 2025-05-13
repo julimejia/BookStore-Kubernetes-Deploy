@@ -283,6 +283,8 @@ Si la IP Elástica es diferente de la IP original, actualiza los registros DNS p
 
 Y listo, la aplicación BookStore Monolithic ya debe poder ser accesible mediante HTTPS con la url www.proyecto2.online
 
+##
+
 2. Objetivo 2: 30% Realizar el escalamiento en nube de la aplicación monolítica, siguiente algún patrón
 de arquitectura de escalamiento de apps monolíticas en AWS. La aplicación debe ser escalada
 utilizando Máquinas Virtuales (VM) con autoescalamiento, base de datos aparte Administrada o si
