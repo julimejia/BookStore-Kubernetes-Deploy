@@ -10,6 +10,9 @@ function renderNavbar() {
         <a class="nav-link" href="#" id="mis-libros-btn">Mis Libros</a>
       </li>
       <li class="nav-item">
+        <a class="nav-link" href="createbook.html">Crear Libro</a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link" href="#" onclick="logout()">Cerrar Sesión</a>
       </li>
     `;
