@@ -354,5 +354,7 @@ o una VM con NFS con Alta Disponibilidad).
 o Microservicio 1: Autenticación: gestionará register, login, logout.
 o Microservicio 2: Catalogo: permitirá visualizar la oferta de libros en la plataforma.
 o Microservicio 3: Compra, Pago y Entrega de libros que se venden por la plataforma.
+   
+![Microservicios](https://github.com/user-attachments/assets/e0fae30b-a4ca-47fa-9952-dc48f362dd23)
 
 
